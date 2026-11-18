@@ -47,15 +47,27 @@ def add(src, org, title, date, url, text, scope):
 tg = {}
 for f in glob.glob('tg_jobstaif*.json'):
     tg.update(json.load(open(f)))
+sj = json.load(open('sj_items.json')) if os.path.exists('sj_items.json') else {}
+sj_by_tg = {str(x['tg']): x for x in sj.values()}
+MULTI = re.compile(r'عدة مدن|جميع مناطق|كافة مناطق|مختلف مناطق|كل المدن|جميع المدن|مدن المملكة|عن بعد|عن بُعد')
 for v in tg.values():
     t = v['text']
-    if 'الطائف' not in t or '#عن_بعد' in t or re.search(r'دورة|دورات|ورشة|ندوة|ندوات|استبيان|بحث يهدف|القبول|whatsapp|واتساب|pinned', t[:300]):
+    if '#عن_بعد' in t or re.search(r'دورة|دورات|ورشة|ندوة|ندوات|استبيان|بحث يهدف|القبول|whatsapp|واتساب|pinned|ابتعاث|تطوع', t[:300]):
         continue
-    m = re.search(r'(?:في|لدى|بـ|ب|عنها|:)\s*' + ORGP, t) or re.search(ORGP, t)
+    s = sj_by_tg.get(str(v['id']))
+    body = s['body'][:900] if s else ''
+    if 'الطائف' in t:
+        scope = 'الطائف' if ('#الطائف' in t or re.search(r'الطائف\s*$', t.split('\n')[0]) or t.count('،') < 4) else 'عدة مدن منها الطائف'
+    elif body and re.search(r'مدينة الطائف|في الطائف|بالطائف|محافظة الطائف|بمحافظة الطائف', body[:700]):
+        scope = 'عدة مدن منها الطائف' if MULTI.search(body[:500]) else 'الطائف'
+    else:
+        continue
+    full = t + ' ' + body
+    m = re.search(r'(?:في|لدى|بـ|ب|عنها|:)\s*' + ORGP, t) or re.search(ORGP, t) or re.search(r'(?:إدارة|بإعلان|إعلان)\s+' + ORGP, body) or re.search(ORGP, body[:400])
     if not m:
         continue
-    scope = 'الطائف' if ('#الطائف' in t or re.search(r'الطائف\s*$', t.split('\n')[0]) or t.count('،') < 4) else 'عدة مدن منها الطائف'
-    add('تليجرام: وظائف الطائف 24', m.group(1), t.split('\n')[0], v['date'][:10], 'https://t.me/jobstaif/%s' % v['id'], t, scope)
+    add('تليجرام: وظائف الطائف 24' + (' + saudijobs24' if body else ''), m.group(1), t.split('\n')[0], (v['date'] or '')[:10],
+        'https://t.me/jobstaif/%s' % v['id'], full, scope)
 
 # Tanqeeb (current, Taif-located)
 for v in json.load(open('tanq_items.json')).values():

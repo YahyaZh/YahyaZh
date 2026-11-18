@@ -1,7 +1,7 @@
 import json, re, collections, os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-T1 = re.compile(r'تحليل البيانات|تحليل بيانات|محلل بيانات|محلل أعمال|محلل نظم|محلل|إحصائي|احصائي|إحصاء|احصاء|ذكاء الأعمال|ذكاء اعمال|Power ?BI|\bSQL\b|Tableau|\bdata\b|analyst|analytics|\bBI\b|statistic|informatics|معلوماتية|علم البيانات|إدارة البيانات|ادارة البيانات|هندسة البيانات|مهندس بيانات|أخصائي بيانات|اخصائي بيانات|جودة البيانات|حوكمة البيانات|الأرشفة|أرشفة|\bMIS\b|reporting|أخصائي تقارير|اخصائي تقارير', re.I)
+T1 = re.compile(r'تحليل البيانات|تحليل بيانات|محلل بيانات|محلل أعمال|محلل نظم|محلل|إحصائي|احصائي|ذكاء الأعمال|ذكاء اعمال|Power ?BI|\bSQL\b|Tableau|\bdata\b|analyst|analytics|\bBI\b|statistic|informatics|معلوماتية|علم البيانات|إدارة البيانات|ادارة البيانات|هندسة البيانات|مهندس بيانات|أخصائي بيانات|اخصائي بيانات|جودة البيانات|حوكمة البيانات|خبير في الأرشفة|\bMIS\b|reporting|أخصائي تقارير|اخصائي تقارير', re.I)
 T2 = re.compile(r'تقنية المعلومات|تقنية معلومات|نظم المعلومات|نظم معلومات|\bIT\b|برمج|مطور|developer|ERP|SAP|Oracle|قواعد البيانات|database|أمن سيبراني|الأمن السيبراني|cyber|حاسب آلي|حاسب الي|علوم الحاسب|computer|شبكات|\bnetwork|\bsystems? (?:analyst|admin|engineer)|دعم فني تقني|help ?desk', re.I)
 EXCL = re.compile(r'إدخال بيانات|ادخال بيانات|مدخل بيانات|مدخلة بيانات|data entry', re.I)
 
