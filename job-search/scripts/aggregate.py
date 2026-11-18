@@ -1,6 +1,8 @@
 import json, re, glob, os, collections
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 exec(open('analyze.py', encoding='utf-8').read().split("rows = []")[0])  # tier()
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from domains import domains_of, domains_of_ad, DE_RX, IT_RX
 
 VERB = r'\s+(?:توفر|تُوفر|يوفر|تعلن|تُعلن|يعلن|أعلنت|اعلنت|تطلق|تفتح|تبدأ|بدأت|يطلق|تطرح|تقدم|يقدم|توظف|لديها|بحاجة|عن|براتب|برواتب|بمكافأة|للعمل|بالطائف|في الطائف|بمدينة|-|–|:|\||\(|،|,)'
 ORGP = r'((?:الشركة|شركة|مجموعة|مؤسسة|مستشفى|مستشفيات|مجمع|مصنع|مدارس|هيئة|الهيئة|جمعية|مركز|معهد|صيدليات|أسواق|فندق|مطاعم|جامعة|أمانة|وزارة|بنك|مصرف|البنك)\s[^\n،,\(\)▪️🔗📍|:]{2,50})'
@@ -41,7 +43,11 @@ def add(src, org, title, date, url, text, scope):
         return
     if re.match(r'^(شركة|مؤسسة|مجمع|مركز|مصنع|مدارس|فندق)\s+(كبرى|رائدة|خاصة|خاص|طبي|متخصص|وطنية|في|للمقاولات|مشغلة|مالية|عقارية|ملابس|حلويات|استشارات|راقي|للاطفال|أطفال|بقسم|للطب|عالمية|كبرى)', org):
         return
-    recs.append(dict(src=src, org=org, k=key(org), title=title.strip()[:200], date=date, url=url, tier=tier(text[:900]), scope=scope))
+    _d = domains_of_ad(title, text[:1500])
+    _de = bool(DE_RX.search(title or ''))
+    _it = bool(IT_RX.search(text[:1500]))
+    _tier = 1 if _d else (2 if _it else 3)
+    recs.append(dict(src=src, org=org, k=key(org), title=title.strip()[:200], date=date, url=url, tier=_tier, doms=_d, de=_de, scope=scope))
 
 # Telegram
 tg = {}
@@ -109,6 +115,8 @@ for r in recs:
     a = agg.setdefault(r['k'], dict(names=collections.Counter(), n=0, t1=0, t2=0, dates=[], srcs=set(), ex1=[], ex2=[], ex=[], taifonly=0))
     a['names'][r['org']] += 1
     a['n'] += 1
+    for _x in r.get('doms', []):
+        a.setdefault('dom', collections.Counter())[_x] += 1
     a['srcs'].add(r['src'].split(' / ')[0])
     if r['date']:
         a['dates'].append(r['date'])
@@ -127,7 +135,7 @@ for k, a in agg.items():
     name = a['names'].most_common(1)[0][0]
     out.append(dict(key=k, name=name, n=a['n'], t1=a['t1'], t2=a['t2'], taifonly=a['taifonly'], srcs=sorted(a['srcs']),
                     first=min(a['dates']) if a['dates'] else '', last=max(a['dates']) if a['dates'] else '',
-                    ex1=a['ex1'][:4], ex2=a['ex2'][:4], ex=a['ex'][:4]))
+                    ex1=a['ex1'][:4], ex2=a['ex2'][:4], ex=a['ex'][:4], dom=dict(a.get('dom', {}))))
 json.dump(out, open('employers.json', 'w'), ensure_ascii=False, indent=0)
 json.dump(recs, open('recs.json', 'w'), ensure_ascii=False)
 print('records', len(recs), 'employers', len(out))
